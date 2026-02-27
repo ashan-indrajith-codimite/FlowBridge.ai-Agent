@@ -1,10 +1,14 @@
 """
-CodeGeneratorAgent — Step 5 of the FlowBridge.ai pipeline.
+CodeGeneratorAgent — sole LLM agent in the FlowBridge.ai pipeline.
 
-Reads component_blueprint, design_tokens, normalized_figma, framework_skills,
-special_notes, and component_name from state. Generates a pixel-faithful,
-production-ready component using EXACT token values from design_tokens —
-no semantic color approximations, no invented spacing.
+Reads from session state:
+  - figma_node_json  — raw Figma node JSON as provided
+  - framework        — target framework
+  - styling          — 'tailwind' or 'inline_css'
+  - special_notes    — designer's additional requirements
+  - component_name   — PascalCase component name (derived from root node name)
+
+Outputs: state['generated_code']
 """
 
 from pathlib import Path
@@ -18,98 +22,95 @@ from pipeline._config import GEMINI_MODEL
 # ---------------------------------------------------------------------------
 _INTERPRETATION_GUIDE_PATH = Path(__file__).parent / "figma-tree-interpretation.md"
 _FIGMA_INTERPRETATION_GUIDE = _INTERPRETATION_GUIDE_PATH.read_text(encoding="utf-8")
-
+# Escape all curly braces in the guide so ADK's inject_session_state won't try
+# to substitute {r}, {g}, {b}, {x}, {y} etc. found in the JSON code examples.
+_FIGMA_INTERPRETATION_GUIDE_ESCAPED = _FIGMA_INTERPRETATION_GUIDE.replace("{", "{{").replace("}", "}}")
 _CODE_GENERATOR_BASE_INSTRUCTION = """
-You are an expert UI component code generator for the FlowBridge.ai system.
-
-You will receive from session state:
-- `component_blueprint`  — structural spec with token ID references
-- `design_tokens`        — exact token map: colors (hex, rgb_css), spacing (px), fonts, radii, shadows
-- `normalized_figma`     — the full Figma node tree with exact values
-- `framework_skills`     — the framework skills file (coding conventions, structure, patterns)
-- `special_notes`        — designer's additional requirements
-- `component_name`       — PascalCase name for the component (e.g. "LoginScreenContainer")
+You are an expert UI component code generator.
 
 ═══════════════════════════════════════════════════════
-PIXEL FIDELITY RULES — NON-NEGOTIABLE
+INPUTS (injected from session state)
 ═══════════════════════════════════════════════════════
 
-1. COLORS — ALWAYS use exact hex values from design_tokens.colors as Tailwind arbitrary values:
-   ✅ CORRECT: className="bg-[#9447B0] text-[#FFFFFF]"
-   ❌ WRONG:   className="bg-purple-600 text-white"      ← invented approximation
+FIGMA NODE JSON (the design to implement exactly):
+{figma_node_json}
 
-2. SPACING — ALWAYS use exact px values from design_tokens.spacing as Tailwind arbitrary values:
-   ✅ CORRECT: className="gap-[32px] py-[10px] px-[20px]"
-   ❌ WRONG:   className="gap-8 py-2.5 px-5"             ← approximation
+TARGET FRAMEWORK: {framework}
+STYLING APPROACH: {styling}
+COMPONENT NAME: {component_name}
 
-3. FONT SIZE — ALWAYS use exact px values from design_tokens.fonts:
-   ✅ CORRECT: className="text-[19.5px] font-[500]"
-   ❌ WRONG:   className="text-xl font-medium"            ← approximation
+SPECIAL NOTES FROM DESIGNER:
+{special_notes}
 
-4. FONT FAMILY — ALWAYS use font-['Font_Name'] with underscores for spaces:
-   ✅ CORRECT: className="font-['Public_Sans']"
-   ❌ WRONG:   className="font-sans"
+═══════════════════════════════════════════════════════
+PIXEL FIDELITY — NON-NEGOTIABLE
+═══════════════════════════════════════════════════════
 
-5. BORDER RADIUS — ALWAYS use exact px values from design_tokens.radii:
-   ✅ CORRECT: className="rounded-[6px]"
-   ❌ WRONG:   className="rounded-md"
+Read every color, spacing, font size, border radius, and shadow directly from
+the FIGMA NODE JSON above and use the EXACT values in the output code. Never approximate.
 
-6. SHADOWS — ALWAYS use exact CSS values from design_tokens.shadows:
-   ✅ CORRECT: className="shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
-   ❌ WRONG:   className="shadow-md"
+If styling == 'tailwind':
+  - Use Tailwind arbitrary values for all exact values.
+  - Colors:       className="bg-[#9447B0] text-[#FFFFFF]"
+  - Spacing:      className="gap-[32px] py-[10px] px-[20px]"
+  - Font size:    className="text-[19.5px] font-[500]"
+  - Border radius: className="rounded-[6px]"
+  - Shadows:      className="shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+  - Font family:  className="font-['Public_Sans']"
+  - NO inline style={{}} — Tailwind classes ONLY.
+
+If styling == 'inline_css':
+  - Use inline style attributes for all styling.
+  - Colors:       style={{backgroundColor: '#9447B0', color: '#FFFFFF'}}
+  - Spacing:      style={{gap: '32px', padding: '10px 20px'}}
+  - Font:         style={{fontSize: '19.5px', fontWeight: 500}}
+  - Border radius: style={{borderRadius: '6px'}}
+  - Shadows:      style={{boxShadow: '0 2px 4px rgba(0,0,0,0.3)'}}
+  - NO Tailwind classes — inline styles ONLY.
+  - For HTML: use style="..." attribute syntax.
 
 ═══════════════════════════════════════════════════════
 FRAMEWORK RULES
 ═══════════════════════════════════════════════════════
 
-7. Follow ALL conventions in `framework_skills` exactly:
-   - File structure, import order, naming conventions
-   - TypeScript types — all props and state must be typed
-   - No imports from "@/lib/utils", no cva, no cn() — use plain string className
-   - Use clsx/template literal or direct string concatenation for conditional classes
-   - NO external icon libraries (no lucide-react, no heroicons) — use inline SVG elements for icons
-   - Only use: react and react-dom. Everything else must be inline.
-
-8. The component must be FULLY STANDALONE:
-   - Zero dependencies beyond react and react-dom
-   - No import that won't resolve with ONLY react installed (no lucide-react, no icon packages)
+- For React/Vue/Angular/Svelte: use TypeScript, proper component patterns.
+- For HTML: output a single self-contained .html file with vanilla JS.
+- NO external icon libraries — use inline SVG for any icons.
+- For React: zero dependencies beyond react and react-dom.
+- For HTML+Tailwind: include the Tailwind CDN script tag in <head>.
 
 ═══════════════════════════════════════════════════════
-COMPLETENESS RULES
+COMPLETENESS
 ═══════════════════════════════════════════════════════
 
-9. Implement the COMPLETE UI from the blueprint:
-   - ALL sections (logo, headings, form, etc.)
-   - ALL interactive elements (inputs, buttons, toggles)
-   - ALL states: default, hover, focus, active, disabled, loading, error
-   - ALL form validation from special_notes with exact error message text
-   - ALL accessibility attributes from the blueprint
-
-10. Use `component_name` from state as the React component function name and export name.
+- Implement ALL sections and elements visible in the FIGMA NODE JSON.
+- ALL interactive states: default, hover, focus, active, disabled, loading, error.
+- ALL form validation from SPECIAL NOTES with exact error message text.
+- ALL accessibility attributes: aria-live, aria-busy, aria-invalid, aria-describedby, htmlFor.
+- Use the COMPONENT NAME as the component function name and export name.
+  For HTML: use it as the page <title>.
 
 ═══════════════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════════════
 
 Output ONLY the raw component code:
-- No markdown fences (no ```tsx or ```)
-- No explanation text before or after
+- No markdown fences (no ```tsx or ```html)
+- No explanation before or after
 - No TODO comments
-- Just the complete, runnable .tsx file content
-
-START directly with imports.
+- For React: start with imports.
+- For HTML: start with <!DOCTYPE html>.
 """
 
-# Build the full instruction by concatenating the interpretation guide + base instruction.
-# We use string concatenation (not f-string) because the MD file contains {r}, {g}, {b}
-# in code examples that would break f-string interpolation.
+# Append the Figma tree interpretation guide to the instruction.
+# The guide is brace-escaped so ADK's inject_session_state won't mistake
+# JSON examples like {r}, {g}, {b} as session state placeholders.
 CODE_GENERATOR_INSTRUCTION = (
     "═══════════════════════════════════════════════════════\n"
     "FIGMA NODE TREE INTERPRETATION REFERENCE\n"
     "═══════════════════════════════════════════════════════\n\n"
-    "Use the following guide to correctly interpret the Figma node JSON structure.\n"
-    "This is your reference for understanding the compressed Figma tree format:\n\n"
-    + _FIGMA_INTERPRETATION_GUIDE + "\n\n"
+    "Use the following guide to correctly interpret the Figma node JSON structure:\n\n"
+    + _FIGMA_INTERPRETATION_GUIDE_ESCAPED + "\n\n"
     "═══════════════════════════════════════════════════════\n"
     "END OF FIGMA INTERPRETATION REFERENCE\n"
     "═══════════════════════════════════════════════════════\n"
