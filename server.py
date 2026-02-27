@@ -24,6 +24,7 @@ from typing import Any
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from main import run_pipeline
@@ -40,6 +41,17 @@ app = FastAPI(
     title="FlowBridge.ai",
     description="Generate pixel-faithful UI components from Figma design JSON.",
     version="1.0.0",
+)
+
+# ---------------------------------------------------------------------------
+# CORS middleware - allow requests from Chrome Extension
+# ---------------------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (Chrome extensions use chrome-extension://)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
 )
 
 
