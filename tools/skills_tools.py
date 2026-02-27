@@ -25,6 +25,20 @@ _FRAMEWORK_TO_FILE: dict[str, str] = {
 }
 
 
+def load_skills_content(framework: str) -> str:
+    """
+    Returns the raw skills file content for the given framework.
+    Use this outside of ADK tool context (e.g. in run_pipeline()).
+    Returns empty string if the framework is unsupported or file is missing.
+    """
+    framework = framework.lower().strip()
+    file_stem = _FRAMEWORK_TO_FILE.get(framework, framework)
+    skills_path = _SKILLS_DIR / f"{file_stem}.skills.md"
+    if skills_path.exists():
+        return skills_path.read_text(encoding="utf-8")
+    return ""
+
+
 def read_skills_file(framework: str, tool_context: ToolContext) -> dict:
     """
     Opens skills/{framework}.skills.md and writes its content directly

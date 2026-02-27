@@ -21,6 +21,8 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types as genai_types
 
 from pipeline.orchestrator import orchestrator
+from tools.figma_tools import _normalize_node, _to_pascal_case
+from tools.skills_tools import load_skills_content
 
 load_dotenv()
 
@@ -96,32 +98,43 @@ async def run_pipeline(
     styling: str = "tailwind",
 ) -> tuple[str, str, dict]:
     """
-    Puts the raw inputs into session state and runs a single CodeGeneratorAgent call.
+    Pre-processes inputs (normalize Figma JSON, load skills) then runs a
+    single CodeGeneratorAgent call.
     Returns: (generated_code, component_name, root_dimensions)
     """
-    # Derive component_name and root_dimensions from JSON (pure Python, no LLM)
+    # --- Pre-processing (pure Python, no LLM) ---
     try:
         data = json.loads(figma_json_str)
-        root = data.get("ui_root", data)
-        import re as _re2
-        raw_name = root.get("name", "Component")
-        component_name = "".join(w.capitalize() for w in _re2.split(r"[\s_\-]+", raw_name) if w)
-        layout = root.get("layout", {})
+        ui_root_raw = data.get("ui_root", data)
+
+        # Normalize: converts 0-1 RGB floats → hex, expands padding arrays, etc.
+        normalized_root = _normalize_node(ui_root_raw)
+        normalized_json = json.dumps({"ui_root": normalized_root})
+
+        # Derive component name and root dimensions from the normalized tree
+        raw_name = normalized_root.get("name", "Component")
+        component_name = _to_pascal_case(raw_name)
+        layout = normalized_root.get("layout", {})
         root_dimensions = {"width": layout.get("width", 400), "height": layout.get("height", 600)}
     except Exception:
+        normalized_json = figma_json_str
         component_name = "GeneratedComponent"
         root_dimensions = {"width": 400, "height": 600}
+
+    # Load framework-specific coding standards (skills file)
+    framework_skills = load_skills_content(framework)
 
     session_service = InMemorySessionService()
     session = await session_service.create_session(
         app_name=APP_NAME,
         user_id=USER_ID,
         state={
-            "figma_node_json": figma_json_str,
+            "figma_node_json": normalized_json,
             "framework": framework,
             "styling": styling,
             "special_notes": special_notes,
             "component_name": component_name,
+            "framework_skills": framework_skills,
         },
     )
 

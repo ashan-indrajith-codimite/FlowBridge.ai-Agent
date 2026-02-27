@@ -1,13 +1,13 @@
 """
 OrchestratorAgent — root agent for the FlowBridge.ai pipeline.
 
-Single-agent pipeline:
-  1. Pre-processing (Python, no LLM):
-       - normalize_figma_node  → state['normalized_figma'], state['component_name']
-       - extract_design_tokens → state['design_tokens']
-       - read_skills_file      → state['framework_skills']
-       - styling conventions   → state['styling_conventions'] (inline string, no LLM)
-  2. CodeGeneratorAgent — single LLM call that reads all state and produces the component.
+Pre-processing is done in run_pipeline() (main.py) before this agent runs:
+  - Figma JSON normalized via _normalize_node  → state['figma_node_json'] (hex colors, clean structure)
+  - component_name derived via _to_pascal_case → state['component_name']
+  - Framework skills loaded via load_skills_content → state['framework_skills']
+
+Then a single LLM call:
+  - CodeGeneratorAgent — reads all state and produces the final component code.
 """
 
 from google.adk.agents import SequentialAgent

@@ -1,0 +1,141 @@
+{
+  "ui_root": {
+    "id": "2995:10957",
+    "type": "FRAME",
+    "name": "Login Screen Container",
+    "layout": {
+      "mode": "VERTICAL",
+      "spacing": 32,
+      "width": 300,
+      "height": 359
+    },
+    "children": [
+      {
+        "name": "Logo_Section",
+        "type": "FRAME",
+        "layout": {
+          "mode": "HORIZONTAL",
+          "spacing": 7.5,
+          "align": "CENTER"
+        },
+        "children": [
+          {
+            "id": "2987:10903",
+            "name": "Launcher_Logo",
+            "type": "INSTANCE",
+            "dimensions": {
+              "width": 180,
+              "height": 56
+            },
+            "text_elements": [
+              {
+                "text": "Launcher",
+                "font": "Open Sans",
+                "size": 24,
+                "weight": 600
+              },
+              {
+                "text": "Admin Studio",
+                "font": "Open Sans",
+                "size": 9,
+                "weight": 400
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Header_Text_Section",
+        "type": "FRAME",
+        "layout": {
+          "mode": "VERTICAL",
+          "spacing": 4.5
+        },
+        "children": [
+          {
+            "text": "Welcome to Admin Studio!",
+            "style": {
+              "font": "Public Sans",
+              "size": 19.5,
+              "weight": 500,
+              "color": {
+                "r": 0.28,
+                "g": 0.27,
+                "b": 0.34
+              }
+            }
+          },
+          {
+            "text": "Enter your username and password to access your account.",
+            "style": {
+              "font": "Public Sans",
+              "size": 14,
+              "weight": 400,
+              "color": {
+                "r": 0.44,
+                "g": 0.42,
+                "b": 0.49
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Login_Form",
+        "type": "FRAME",
+        "layout": {
+          "mode": "VERTICAL",
+          "spacing": 12
+        },
+        "children": [
+          {
+            "label": "Username",
+            "placeholder": "Enter your username",
+            "style": {
+              "radius": 6,
+              "border": {
+                "r": 0.86,
+                "g": 0.85,
+                "b": 0.87
+              },
+              "padding": [7, 14]
+            }
+          },
+          {
+            "label": "Password",
+            "placeholder": "Enter your password",
+            "has_icon": "eye-off",
+            "style": {
+              "radius": 6,
+              "border": {
+                "r": 0.86,
+                "g": 0.85,
+                "b": 0.87
+              },
+              "padding": [7, 14]
+            }
+          },
+          {
+            "name": "Submit_Button",
+            "text": "Login",
+            "style": {
+              "bg": {
+                "r": 0.58,
+                "g": 0.28,
+                "b": 0.69
+              },
+              "text_color": "#FFFFFF",
+              "radius": 6,
+              "padding": [10, 20],
+              "shadow": {
+                "offset": [0, 2],
+                "blur": 4,
+                "opacity": 0.3
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

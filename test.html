@@ -1,217 +1,144 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!DOCTYPE html>     
+  <html lang="en">
+  <head>                                                                                                                                                                                                       <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />                                                                                                                               
     <title>LoginScreenContainer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Public+Sans:wght@400;500&display=swap" rel="stylesheet">
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Public+Sans:wght@400;500&display=swap");
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        background-color: #f4f5f7;
-        font-family: "Public Sans", sans-serif;
-        color: rgb(44, 43, 54);
-      }
-      * {
+      *, *::before, *::after {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #F9F9F9;
+        font-family: 'Public Sans', sans-serif;
+        padding: 16px;
+      }
+      .submit-btn:hover {
+        opacity: 0.9;
+      }
+      .form-input:focus {
+        outline: 2px solid #9447B0;
+        outline-offset: 1px;
+        border-color: #9447B0;
       }
     </style>
   </head>
   <body>
-    <div
-      style="
-        display: flex;
-        flex-direction: column;
-        gap: 32px;
-        width: 300px;
-        height: 359px;
-        align-items: center;
-      "
-    >
-      <!-- Logo Section -->
-      <div
-        style="
-          display: flex;
-          flex-direction: row;
-          gap: 7.5px;
-          align-items: center;
-          justify-content: center;
-        "
-      >
-        <div
-          style="
-            width: 180px;
-            height: 56px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-          "
-        >
-          <div
-            style="
-              font-family: &quot;Open Sans&quot;, sans-serif;
-              font-size: 24px;
-              font-weight: 600;
-              color: #333;
-              line-height: 1.1;
-            "
-          >
-            Launcher
+
+    <div id="LoginScreenContainer" style="display: flex; flex-direction: column; gap: 32px; width: 300px;">
+
+      <div style="display: flex; flex-direction: row; gap: 7.5px; align-items: center; justify-content: flex-start;">
+          <div style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0; border-radius: 8px;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="#9447B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M2 7L12 12" stroke="#9447B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 22V12" stroke="#9447B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M22 7L12 12" stroke="#9447B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M17 4.5L7 9.5" stroke="#9447B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
           </div>
-          <div
-            style="
-              font-family: &quot;Open Sans&quot;, sans-serif;
-              font-size: 9px;
-              font-weight: 400;
-              color: #555;
-              line-height: 1.1;
-            "
-          >
-            Admin Studio
+          <div style="display: flex; flex-direction: column;">
+              <span style="font-family: 'Open Sans', sans-serif; font-size: 24px; font-weight: 600; line-height: 1;">Launcher</span>
+              <span style="font-family: 'Open Sans', sans-serif; font-size: 9px; font-weight: 400; line-height: 1; color: #706B7D;">Admin Studio</span>
           </div>
-        </div>
       </div>
-      <!-- Header Text Section -->
-      <div
-        style="
-          display: flex;
-          flex-direction: column;
-          gap: 4.5px;
-          text-align: center;
-        "
-      >
-        <h1
-          style="
-            font-family: &quot;Public Sans&quot;, sans-serif;
-            font-size: 19.5px;
-            font-weight: 500;
-            color: rgb(71, 69, 87);
-            margin: 0;
-          "
-        >
-          Welcome to Admin Studio!
-        </h1>
-        <p
-          style="
-            font-family: &quot;Public Sans&quot;, sans-serif;
-            font-size: 14px;
-            font-weight: 400;
-            color: rgb(112, 107, 125);
-            margin: 0;
-            max-width: 280px;
-          "
-        >
-          Enter your username and password to access your account.
-        </p>
+
+      <div style="display: flex; flex-direction: column; gap: 4.5px;">
+        <h1 style="font-family: 'Public Sans', sans-serif; font-size: 19.5px; font-weight: 500; color: rgb(71,69,87); line-height: 1.2;">Welcome to Admin Studio!</h1>
+        <p style="font-family: 'Public Sans', sans-serif; font-size: 14px; font-weight: 400; color: rgb(112,107,125); line-height: 1.4;">Enter your username and password to access your account.</p>      
       </div>
-      <!-- Login Form -->
-      <form
-        style="display: flex; flex-direction: column; gap: 12px; width: 100%"
-      >
-        <!-- Username Input -->
-        <div style="display: flex; flex-direction: column; gap: 4px">
-          <label
-            for="username"
-            style="
-              font-family: &quot;Public Sans&quot;, sans-serif;
-              font-size: 13px;
-              font-weight: 500;
-              color: rgb(71, 69, 87);
-            "
-            >Username</label
-          >
+
+      <form id="login-form" style="display: flex; flex-direction: column; gap: 12px;" novalidate>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label for="username" style="font-family: 'Public Sans', sans-serif; font-size: 14px; font-weight: 500; color: rgb(71,69,87);">Username</label>
           <input
             type="text"
             id="username"
+            name="username"
             placeholder="Enter your username"
-            style="
-              width: 100%;
-              padding: 7px 14px;
-              border-radius: 6px;
-              border: 1px solid rgb(219, 217, 222);
-              font-family: &quot;Public Sans&quot;, sans-serif;
-              font-size: 14px;
-            "
-          />
+            class="form-input"
+            style="width: 100%; padding: 7px 14px; border-radius: 6px; border: 1px solid rgb(219,217,222); font-family: 'Public Sans', sans-serif; font-size: 14px; transition: all 0.2s ease;">
         </div>
-        <!-- Password Input -->
-        <div style="display: flex; flex-direction: column; gap: 4px">
-          <label
-            for="password"
-            style="
-              font-family: &quot;Public Sans&quot;, sans-serif;
-              font-size: 13px;
-              font-weight: 500;
-              color: rgb(71, 69, 87);
-            "
-            >Password</label
-          >
-          <div style="position: relative; width: 100%">
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label for="password" style="font-family: 'Public Sans', sans-serif; font-size: 14px; font-weight: 500; color: rgb(71,69,87);">Password</label>
+          <div style="position: relative; display: flex; align-items: center;">
             <input
               type="password"
               id="password"
+              name="password"
               placeholder="Enter your password"
-              style="
-                width: 100%;
-                padding: 7px 40px 7px 14px;
-                border-radius: 6px;
-                border: 1px solid rgb(219, 217, 222);
-                font-family: &quot;Public Sans&quot;, sans-serif;
-                font-size: 14px;
-              "
-            />
-            <span
-              style="
-                position: absolute;
-                right: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 20px;
-                height: 20px;
-                color: rgb(150, 150, 150);
-                cursor: pointer;
-              "
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243"
-                ></path>
+              class="form-input"
+              style="width: 100%; padding: 7px 40px 7px 14px; border-radius: 6px; border: 1px solid rgb(219,217,222); font-family: 'Public Sans', sans-serif; font-size: 14px; transition: all 0.2s ease;">
+            <button type="button" id="toggle-password" aria-label="Show password" style="position: absolute; right: 8px; background: none; border: none; cursor: pointer; display: flex; align-items:      
+  center; justify-content: center; padding: 4px; color: #706B7D;">
+              <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+  stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1        
+  1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
               </svg>
-            </span>
+              <svg id="eye-on-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+  stroke-linejoin="round" style="display: none;">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
           </div>
         </div>
-        <!-- Submit Button -->
+
         <button
           type="submit"
-          style="
-            width: 100%;
-            padding: 10px 20px;
-            background-color: rgb(148, 71, 176);
-            color: #ffffff;
-            border-radius: 6px;
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
-            border: none;
-            cursor: pointer;
-            font-family: &quot;Public Sans&quot;, sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-          "
-        >
+          class="submit-btn"
+          style="width: 100%; padding: 10px 20px; background-color: rgb(148,71,176); color: rgb(255,255,255); border-radius: 6px; border: none; font-family: 'Public Sans', sans-serif; font-size: 14px;   
+  font-weight: 500; cursor: pointer; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3); transition: opacity 0.2s ease;">
           Login
         </button>
+
       </form>
     </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const passwordInput = document.getElementById("password");
+        const toggleButton = document.getElementById("toggle-password");
+        const eyeOnIcon = document.getElementById("eye-on-icon");
+        const eyeOffIcon = document.getElementById("eye-off-icon");
+
+        if (toggleButton && passwordInput) {
+          toggleButton.addEventListener("click", () => {
+            const isPassword = passwordInput.getAttribute("type") === "password";
+
+            if (isPassword) {
+              passwordInput.setAttribute("type", "text");
+              toggleButton.setAttribute("aria-label", "Hide password");
+              eyeOnIcon.style.display = "block";
+              eyeOffIcon.style.display = "none";
+            } else {
+              passwordInput.setAttribute("type", "password");
+              toggleButton.setAttribute("aria-label", "Show password");
+              eyeOnIcon.style.display = "none";
+              eyeOffIcon.style.display = "block";
+            }
+          });
+        }
+
+        const usernameInput = document.getElementById('username');
+        if (usernameInput) {
+          usernameInput.focus();
+        }
+      });
+    </script>
+
   </body>
-</html>
+  </html>
