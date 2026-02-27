@@ -2,7 +2,12 @@
 
 ## 🎯 Overview
 
-**FlowBridge.ai** is a multi-agent AI system that converts Figma design JSON into pixel-perfect, production-ready UI components. Built with [Google ADK](https://github.com/google/adk-python) and powered by Gemini 2.5 Pro, it orchestrates 6 specialized agents in a sequential pipeline to ensure design fidelity and code quality.
+**FlowBridge.ai** is a multi-agent AI system that converts Figma design JSON into pixel-perfect, production-ready UI components. Built with [Google ADK](https://github.com/google/adk-python) and powered by Gemini 2.5 Pro, it orchestrates 7 specialized agents in a sequential pipeline to ensure design fidelity and code quality.
+
+
+## 🎯 Overview
+
+**FlowBridge.ai** is a multi-agent AI system that converts Figma design JSON into pixel-perfect, production-ready UI components. Built with [Google ADK](https://github.com/google/adk-python) and powered by Gemini 2.5 Pro, it orchestrates 7 specialized agents in a sequential pipeline to ensure design fidelity and code quality.
 
 ---
 
@@ -32,7 +37,8 @@
                     ┌──────────────▼──────────────┐
                     │   Orchestrator Agent        │
                     │   (SequentialAgent)         │
-                    │   6-Stage Pipeline          │
+                    │   7-Stage Pipeline          │
+
                     └──────────────┬──────────────┘
                                    │
         ┌──────────────────────────┴──────────────────────────┐
@@ -47,6 +53,7 @@
         │  State Variables:
         │  - figma_node_json (input)
         │  - framework (input)
+        │  - styling (input)
         │  - special_notes (input)
         │  - normalized_figma (step 1)
         │  - component_name (step 1)
@@ -54,15 +61,30 @@
         │  - design_tokens (step 2)
         │  - component_blueprint (step 3)
         │  - framework_skills (step 4)
-        │  - generated_code (step 5)
-        │  - final_code (step 6 - output)
+        │  - styling_conventions (step 5)
+        │  - generated_code (step 6)
+        │  - final_code (step 7 - output)
         │
-        └──► Flows through all 6 agents sequentially
+        └─► Flows through all 7 agents sequentially
+
+        │  - special_notes (input)
+        │  - normalized_figma (step 1)
+        │  - component_name (step 1)
+        │  - root_dimensions (step 1)
+        │  - design_tokens (step 2)
+        │  - component_blueprint (step 3)
+        │  - framework_skills (step 4)
+        │  - styling_conventions (step 5)
+        │  - generated_code (step 6)
+        │  - final_code (step 7 - output)
+        │
+        └─► Flows through all 7 agents sequentially
 ```
 
 ---
 
-## 🔄 6-Agent Sequential Pipeline
+## 🔄 7-Agent Sequential Pipeline
+
 
 Each agent reads from and writes to **session state** (the shared scratchpad). Agents execute in strict order, with each building on the previous agent's output.
 
@@ -72,6 +94,11 @@ Each agent reads from and writes to **session state** (the shared scratchpad). A
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                                                                                │
 │  INPUT:  figma_node_json (raw Figma JSON)                                     │
+│          framework (react | vue | angular | svelte | html)                   │
+│          styling (tailwind | inline_css)                                     │
+│          special_notes (designer requirements)                                │
+│                                                                                │
+
 │          framework (react | vue | angular | svelte)                           │
 │          special_notes (designer requirements)                                │
 │                                                                                │
@@ -163,6 +190,93 @@ Each agent reads from and writes to **session state** (the shared scratchpad). A
         ┃    - State management                                ┃
         ┃    - Styling approach (Tailwind arbitrary values)    ┃
         ┗━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+                                 │
+                                 ▼
+        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+        ┃  AGENT 5: StylingAgent (LLM)                         ┃
+        ┃  ──────────────────────────────────────              ┃
+        ┃  Model: Gemini 2.5 Pro                               ┃
+        ┃                                                       ┃
+        ┃  INPUT:  state['styling']                            ┃
+        ┃  OUTPUT: state['styling_conventions']                ┃
+        ┃                                                       ┃
+        ┃  TASK:                                               ┃
+        ┃  • Read the styling mode (tailwind | inline_css)     ┃
+        ┃  • Generate detailed styling convention rules        ┃
+        ┃  • Define how tokens map to CSS/Tailwind classes     ┃
+        ┃  • Ensure consistency for downstream CodeGenerator   ┃
+        ┗━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+                                 │
+                                 ▼
+        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+        ┃  AGENT 6: CodeGeneratorAgent (LLM)                   ┃
+        ┃  ─────────────────────────────────────               ┃
+        ┃  Model: Gemini 2.5 Pro                               ┃
+        ┃  Context: figma-tree-interpretation.md (821 lines)   ┃
+        ┃                                                       ┃
+        ┃  INPUT:  state['component_blueprint']                ┃
+        ┃          state['design_tokens']                      ┃
+        ┃          state['normalized_figma']                   ┃
+        ┃          state['framework_skills']                   ┃
+        ┃          state['styling_conventions']                ┃
+        ┃          state['special_notes']                      ┃
+        ┃          state['component_name']                     ┃
+        ┃  OUTPUT: state['generated_code']                     ┃
+        ┃                                                       ┃
+        ┃  TASK:                                               ┃
+        ┃  • Generate complete, runnable component code        ┃
+        ┃  • PIXEL FIDELITY RULES (NON-NEGOTIABLE):            ┃
+        ┃    1. Colors: EXACT hex as Tailwind/CSS arbitrary    ┃
+        ┃       ✅ bg-[#9447B0]  ❌ bg-purple-600              ┃
+        ┃    2. Spacing: EXACT px as Tailwind/CSS arbitrary    ┃
+        ┃       ✅ gap-[32px]  ❌ gap-8                        ┃
+        ┃    3. Font size: EXACT px                            ┃
+        ┃       ✅ text-[19.5px]  ❌ text-xl                   ┃
+        ┃    4. Font family: Exact name with underscores       ┃
+        ┃       ✅ font-['Public_Sans']  ❌ font-sans          ┃
+        ┃    5. Border radius: EXACT px                        ┃
+        ┃       ✅ rounded-[6px]  ❌ rounded-md                ┃
+        ┃    6. Shadows: EXACT CSS value                       ┃
+        ┃       ✅ shadow-[0_2px_4px_rgba(0,0,0,0.3)]          ┃
+        ┃  • Follow framework_skills conventions exactly       ┃
+        ┃  • Fully standalone (React/Vue/HTML + Styling)       ┃
+        ┃  • All states: default, hover, focus, disabled, etc. ┃
+        ┃  • Complete accessibility (ARIA, labels, roles)      ┃
+        ┃  • Output raw code (no markdown fences)              ┃
+        ┗━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+                                 │
+                                 ▼
+        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+        ┃  AGENT 7: FidelityGateAgent (LLM)                    ┃
+        ┃  ────────────────────────────────────                ┃
+        ┃  Model: Gemini 2.5 Pro                               ┃
+        ┃                                                       ┃
+        ┃  INPUT:  state['generated_code']                     ┃
+        ┃          state['design_tokens']                      ┃
+        ┃          state['normalized_figma']                   ┃
+        ┃          state['component_blueprint']                ┃
+        ┃          state['special_notes']                      ┃
+        ┃  OUTPUT: state['final_code']                         ┃
+        ┃                                                       ┃
+        ┃  TASK:                                               ┃
+        ┃  • Diff generated_code vs design_tokens              ┃
+        ┃  • FIDELITY CHECKLIST:                               ┃
+        ┃    ✓ Every color hex present correctly               ┃
+        ┃    ✓ Every spacing px present correctly              ┃
+        ┃    ✓ Every font family/size/weight exact             ┃
+        ┃    ✓ Every radius px present                         ┃
+        ┃    ✓ Every shadow CSS value present                  ┃
+        ┃  • COMPLETENESS CHECKLIST:                           ┃
+        ┃    ✓ All sections from blueprint implemented         ┃
+        ┃    ✓ All interactive states implemented              ┃
+        ┃    ✓ All validation rules from special_notes         ┃
+        ┃    ✓ All accessibility requirements                  ┃
+        ┃  • If violations found: FIX inline and output        ┃
+        ┃  • Replace semantic classes with exact values        ┃
+        ┃    (bg-purple-600 → bg-[#9447B0])                    ┃
+        ┃  • Output final_code (corrected or unchanged)        ┃
+        ┗━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
                                  │
                                  ▼
         ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -305,6 +419,65 @@ Each agent reads from and writes to **session state** (the shared scratchpad). A
 ### 4. **SkillsLoaderAgent** (Tool)
 - **Type**: LlmAgent with tool
 - **Tool**: `read_skills_file(framework: str)`
+- **Input**: `framework` (react | vue | angular | svelte | html)
+- **Output**: Framework-specific coding conventions
+- **Key Operations**:
+  - Reads `.skills.md` file from `skills/` directory
+  - For React: loads `react-standalone.skills.md`
+  - For HTML: loads `html.skills.md`
+  - Skills include:
+    - File structure conventions
+    - Import order
+    - TypeScript patterns
+    - State management approach
+    - Styling methodology
+    - Forbidden dependencies (no lucide-react, no shadcn/ui, etc.)
+- **State Updates**:
+  - `framework_skills`: Full skills file content
+
+---
+
+### 5. **StylingAgent** (LLM)
+- **Type**: LlmAgent (Gemini 2.5 Pro)
+- **File**: `pipeline/styling_agent.py`
+- **Input**: `state["styling"]` ('tailwind' | 'inline_css')
+- **Output**: `state["styling_conventions"]`
+- **Purpose**: Reads the styling mode and generates detailed styling convention rules for the downstream CodeGeneratorAgent.
+- **Key Operations**:
+  - Analyzes the requested styling mode
+  - Generates rules for mapping design tokens to CSS or Tailwind classes
+  - Defines how hover/active/focus states should be handled in the selected mode
+  - Ensures consistency in class naming or style object structure
+- **State Updates**:
+  - `styling_conventions`: Markdown-formatted styling spec
+
+---
+
+### 6. **CodeGeneratorAgent** (LLM)
+- **Type**: LlmAgent (Gemini 2.5 Pro)
+- **Special Context**: `figma-tree-interpretation.md` (821-line Figma JSON format guide) prepended to instruction
+- **Input**: `component_blueprint`, `design_tokens`, `normalized_figma`, `framework_skills`, `styling_conventions`, `special_notes`, `component_name`
+- **Output**: Complete component source code
+- **Key Operations**:
+  - Generates pixel-perfect component following blueprint
+  - **Pixel Fidelity Rules** (non-negotiable):
+    1. Colors: EXACT hex as Tailwind/CSS arbitrary
+    2. Spacing: EXACT px as Tailwind/CSS arbitrary
+    3. Font size: EXACT px
+    4. Font family: Exact name with underscores
+    5. Border radius: EXACT px
+    6. Shadows: EXACT CSS value
+  - Implements all states: default, hover, focus, active, disabled, loading, error
+  - Full accessibility (ARIA, labels, roles)
+  - Fully standalone (no external UI libraries)
+  - Outputs raw code (no markdown fences)
+- **State Updates**:
+  - `generated_code`: Complete component code
+
+---
+
+### 7. **FidelityGateAgent** (LLM - Quality Control)
+
 - **Input**: `framework` (react | vue | angular | svelte)
 - **Output**: Framework-specific coding conventions
 - **Key Operations**:
@@ -377,6 +550,20 @@ Google ADK's session state acts as a shared scratchpad. All agents read from and
 
 | Variable | Set By | Used By | Description |
 |----------|--------|---------|-------------|
+| `figma_node_json` | Input | Agent 1 | Raw Figma JSON string |
+| `framework` | Input | Agent 4 | Target framework (react/vue/angular/svelte/html) |
+| `styling` | Input | Agent 5 | Styling mode (tailwind | inline_css) |
+| `special_notes` | Input | Agent 3, 6, 7 | Designer requirements |
+| `normalized_figma` | Agent 1 | Agent 2, 3, 6, 7 | Clean Figma tree with hex colors |
+| `component_name` | Agent 1 | Agent 6, 7 | PascalCase component name |
+| `root_dimensions` | Agent 1 | Output | Root node width x height |
+| `design_tokens` | Agent 2 | Agent 3, 6, 7 | Extracted token map (single source of truth) |
+| `component_blueprint` | Agent 3 | Agent 6, 7 | Structural spec with token references |
+| `framework_skills` | Agent 4 | Agent 6 | Framework coding conventions |
+| `styling_conventions` | Agent 5 | Agent 6 | Styling convention rules |
+| `generated_code` | Agent 6 | Agent 7 | Initial generated code |
+| `final_code` | Agent 7 | Output | Final verified code |
+
 | `figma_node_json` | Input | Agent 1 | Raw Figma JSON string |
 | `framework` | Input | Agent 4 | Target framework (react/vue/angular/svelte) |
 | `special_notes` | Input | Agent 3, 5, 6 | Designer requirements |
@@ -451,7 +638,11 @@ python main.py
 python main.py --json path/to/design.json
 
 # Custom framework
-python main.py --json design.json --framework vue
+python main.py --json design.json --framework html
+
+# With styling (tailwind | inline_css)
+python main.py --json design.json --styling inline_css
+
 
 # With special notes
 python main.py --json design.json --notes "Add dark mode support"
@@ -485,6 +676,12 @@ uvicorn server:app --reload
   ```json
   {
     "figma_node_json": { /* Figma JSON object or string */ },
+    "framework": "react",  // react | vue | angular | svelte | html
+    "styling": "tailwind", // tailwind | inline_css (default: tailwind)
+    "special_note": "Make it pixel perfect with exact colors. Use Tailwind CSS."
+  }
+
+    "figma_node_json": { /* Figma JSON object or string */ },
     "framework": "react",  // react | vue | angular | svelte
     "special_note": "Make it pixel perfect with exact colors. Use Tailwind CSS."
   }
@@ -513,7 +710,17 @@ FlowBridge.ai-Agent/
 ├── requirements.txt                 # Python dependencies
 ├── .env                             # GOOGLE_API_KEY
 ├── pipeline/
-│   ├── orchestrator.py              # SequentialAgent wiring all 6 agents
+│   ├── orchestrator.py              # SequentialAgent wiring all 7 agents
+│   ├── _config.py                   # GEMINI_MODEL config
+│   ├── figma_parser_agent.py        # Agent 1: FigmaNormalizerAgent
+│   ├── token_extractor_agent.py     # Agent 2: TokenExtractorAgent
+│   ├── design_analyzer_agent.py     # Agent 3: DesignAnalyzerAgent
+│   ├── skills_loader_agent.py       # Agent 4: SkillsLoaderAgent
+│   ├── styling_agent.py             # Agent 5: StylingAgent
+│   ├── code_generator_agent.py      # Agent 6: CodeGeneratorAgent
+│   ├── code_reviewer_agent.py       # Agent 7: FidelityGateAgent
+│   └── figma-tree-interpretation.md # Figma JSON format guide (821 lines)
+
 │   ├── _config.py                   # GEMINI_MODEL config
 │   ├── figma_parser_agent.py        # Agent 1: FigmaNormalizerAgent
 │   ├── token_extractor_agent.py     # Agent 2: TokenExtractorAgent
@@ -526,6 +733,13 @@ FlowBridge.ai-Agent/
 │   ├── figma_tools.py               # normalize_figma_node, extract_design_tokens
 │   └── skills_tools.py              # read_skills_file
 ├── skills/
+│   ├── react-standalone.skills.md   # React conventions (Tailwind only)
+│   ├── react.skills.md              # React with shadcn/ui (not used)
+│   ├── html.skills.md               # HTML conventions
+│   ├── vue.skills.md                # Vue conventions
+│   ├── angular.skills.md            # Angular conventions
+│   └── svelte.skills.md             # Svelte conventions
+
 │   ├── react-standalone.skills.md   # React conventions (Tailwind only)
 │   ├── react.skills.md              # React with shadcn/ui (not used)
 │   ├── vue.skills.md                # Vue conventions
@@ -769,6 +983,13 @@ FlowBridge.ai — Generating React component
 ============================================================
 
 [FigmaNormalizerAgent] Normalized: LoginScreenContainer | root 300x359px | all values preserved exactly...
+[TokenExtractorAgent] Tokens extracted: 3 colors, 9 spacing, 2 fonts, 1 radii, 1 shadows...
+[DesignAnalyzerAgent] ## Component Identity - **Component name:** LoginScreenContainer...
+[SkillsLoaderAgent] Loaded: react.skills.md Key conventions: 1. Component Structure...
+[StylingAgent] Selected styling: tailwind. Rules generated for class mappings.
+[CodeGeneratorAgent] import React, { useState } from 'react';...
+[FidelityGateAgent] ✅ All tokens verified. Final code complete.
+
 [TokenExtractorAgent] Tokens extracted: 3 colors, 9 spacing, 2 fonts, 1 radii, 1 shadows...
 [DesignAnalyzerAgent] ## Component Identity - **Component name:** LoginScreenContainer...
 [SkillsLoaderAgent] Loaded: react.skills.md Key conventions: 1. Component Structure...

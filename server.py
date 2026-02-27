@@ -51,7 +51,11 @@ class Framework(str, Enum):
     vue = "vue"
     angular = "angular"
     svelte = "svelte"
+    html = "html"
 
+class Styling(str, Enum):
+    inline_css = "inline_css"
+    tailwind = "tailwind"
 
 class GenerateRequest(BaseModel):
     figma_node_json: Any = Field(
@@ -64,6 +68,10 @@ class GenerateRequest(BaseModel):
     framework: Framework = Field(
         default=Framework.react,
         description="Target UI framework for code generation.",
+    )
+    styling: Styling = Field(
+        default=Styling.tailwind,
+        description="Styling approach: 'tailwind' for Tailwind CSS utility classes, 'inline_css' for inline style attributes.",
     )
     special_note: str = Field(
         default="",
@@ -111,11 +119,12 @@ async def generate(req: GenerateRequest) -> GenerateResponse:
         )
 
     framework_str = req.framework.value
+    styling_str = req.styling.value
     special_notes = req.special_note or ""
 
     try:
         final_code, component_name, _root_dims = await run_pipeline(
-            figma_json_str, framework_str, special_notes
+            figma_json_str, framework_str, special_notes, styling_str
         )
     except Exception as exc:
         raise HTTPException(

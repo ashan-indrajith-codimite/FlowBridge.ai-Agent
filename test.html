@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoginScreenContainer</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Public+Sans:wght@400;500&display=swap");
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f4f5f7;
+        font-family: "Public Sans", sans-serif;
+        color: rgb(44, 43, 54);
+      }
+      * {
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+        width: 300px;
+        height: 359px;
+        align-items: center;
+      "
+    >
+      <!-- Logo Section -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 7.5px;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            width: 180px;
+            height: 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          "
+        >
+          <div
+            style="
+              font-family: &quot;Open Sans&quot;, sans-serif;
+              font-size: 24px;
+              font-weight: 600;
+              color: #333;
+              line-height: 1.1;
+            "
+          >
+            Launcher
+          </div>
+          <div
+            style="
+              font-family: &quot;Open Sans&quot;, sans-serif;
+              font-size: 9px;
+              font-weight: 400;
+              color: #555;
+              line-height: 1.1;
+            "
+          >
+            Admin Studio
+          </div>
+        </div>
+      </div>
+      <!-- Header Text Section -->
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          gap: 4.5px;
+          text-align: center;
+        "
+      >
+        <h1
+          style="
+            font-family: &quot;Public Sans&quot;, sans-serif;
+            font-size: 19.5px;
+            font-weight: 500;
+            color: rgb(71, 69, 87);
+            margin: 0;
+          "
+        >
+          Welcome to Admin Studio!
+        </h1>
+        <p
+          style="
+            font-family: &quot;Public Sans&quot;, sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            color: rgb(112, 107, 125);
+            margin: 0;
+            max-width: 280px;
+          "
+        >
+          Enter your username and password to access your account.
+        </p>
+      </div>
+      <!-- Login Form -->
+      <form
+        style="display: flex; flex-direction: column; gap: 12px; width: 100%"
+      >
+        <!-- Username Input -->
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <label
+            for="username"
+            style="
+              font-family: &quot;Public Sans&quot;, sans-serif;
+              font-size: 13px;
+              font-weight: 500;
+              color: rgb(71, 69, 87);
+            "
+            >Username</label
+          >
+          <input
+            type="text"
+            id="username"
+            placeholder="Enter your username"
+            style="
+              width: 100%;
+              padding: 7px 14px;
+              border-radius: 6px;
+              border: 1px solid rgb(219, 217, 222);
+              font-family: &quot;Public Sans&quot;, sans-serif;
+              font-size: 14px;
+            "
+          />
+        </div>
+        <!-- Password Input -->
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <label
+            for="password"
+            style="
+              font-family: &quot;Public Sans&quot;, sans-serif;
+              font-size: 13px;
+              font-weight: 500;
+              color: rgb(71, 69, 87);
+            "
+            >Password</label
+          >
+          <div style="position: relative; width: 100%">
+            <input
+              type="password"
+              id="password"
+              placeholder="Enter your password"
+              style="
+                width: 100%;
+                padding: 7px 40px 7px 14px;
+                border-radius: 6px;
+                border: 1px solid rgb(219, 217, 222);
+                font-family: &quot;Public Sans&quot;, sans-serif;
+                font-size: 14px;
+              "
+            />
+            <span
+              style="
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 20px;
+                height: 20px;
+                color: rgb(150, 150, 150);
+                cursor: pointer;
+              "
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243"
+                ></path>
+              </svg>
+            </span>
+          </div>
+        </div>
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          style="
+            width: 100%;
+            padding: 10px 20px;
+            background-color: rgb(148, 71, 176);
+            color: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+            border: none;
+            cursor: pointer;
+            font-family: &quot;Public Sans&quot;, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+          "
+        >
+          Login
+        </button>
+      </form>
+    </div>
+  </body>
+</html>

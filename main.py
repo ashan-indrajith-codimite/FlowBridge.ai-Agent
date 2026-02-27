@@ -2,27 +2,16 @@
 main.py — FlowBridge.ai entry point.
 
 Usage:
-  # Use defaults (sample_data/button_node.json, react, built-in special notes):
   python main.py
-
-  # Custom JSON file:
-  python main.py --json path/to/my_component.json
-
-  # Custom JSON + framework:
-  python main.py --json path/to/my_component.json --framework vue
-
-  # Custom JSON + special notes:
+  python main.py --json path/to/my_component.json --framework vue --styling inline_css
   python main.py --json path/to/my_component.json --notes "Make it dark mode"
-
-  # Custom JSON + notes from a file:
   python main.py --json path/to/my_component.json --notes-file path/to/notes.txt
-
-  # All options:
-  python main.py --json path/to/my_component.json --framework react --notes "notes here"
 """
 
 import argparse
 import asyncio
+import json
+import re as _re
 import sys
 from pathlib import Path
 
@@ -33,13 +22,10 @@ from google.genai import types as genai_types
 
 from pipeline.orchestrator import orchestrator
 
-# ---------------------------------------------------------------------------
-# Load environment variables (.env must contain GOOGLE_API_KEY)
-# ---------------------------------------------------------------------------
 load_dotenv()
 
 # ---------------------------------------------------------------------------
-# Default inputs (used when no CLI args are passed)
+# Defaults
 # ---------------------------------------------------------------------------
 
 DEFAULT_JSON_PATH = "sample_data/button_node.json"
@@ -78,134 +64,110 @@ The root frame is the full login card, centered on the page.
 """
 
 # ---------------------------------------------------------------------------
-# CLI argument parser
+# CLI
 # ---------------------------------------------------------------------------
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="main.py",
-        description="FlowBridge.ai — generate a pixel-faithful component from Figma JSON.",
+        description="FlowBridge.ai — generate a UI component from Figma JSON.",
     )
-    parser.add_argument(
-        "--json",
-        metavar="PATH",
-        default=DEFAULT_JSON_PATH,
-        help=f"Path to Figma node JSON file (default: {DEFAULT_JSON_PATH})",
-    )
-    parser.add_argument(
-        "--framework",
-        metavar="NAME",
-        default=DEFAULT_FRAMEWORK,
-        choices=["react", "vue", "angular", "svelte"],
-        help="Target framework (default: react)",
-    )
-    parser.add_argument(
-        "--notes",
-        metavar="TEXT",
-        default=None,
-        help="Special design notes as a plain string",
-    )
-    parser.add_argument(
-        "--notes-file",
-        metavar="PATH",
-        default=None,
-        help="Path to a .txt file containing special design notes",
-    )
+    parser.add_argument("--json", metavar="PATH", default=DEFAULT_JSON_PATH)
+    parser.add_argument("--framework", metavar="NAME", default=DEFAULT_FRAMEWORK,
+                        choices=["react", "vue", "angular", "svelte", "html"])
+    parser.add_argument("--notes", metavar="TEXT", default=None)
+    parser.add_argument("--notes-file", metavar="PATH", default=None)
+    parser.add_argument("--styling", metavar="MODE", default="tailwind",
+                        choices=["tailwind", "inline_css"])
     return parser.parse_args()
 
 
 APP_NAME = "flowbridge"
 USER_ID = "developer"
 
+# ---------------------------------------------------------------------------
+# Pipeline runner
+# ---------------------------------------------------------------------------
 
-async def run_pipeline(figma_node_json: str, framework: str, special_notes: str) -> tuple[str, str, dict]:
+async def run_pipeline(
+    figma_json_str: str,
+    framework: str,
+    special_notes: str,
+    styling: str = "tailwind",
+) -> tuple[str, str, dict]:
     """
-    Creates a session with the given inputs, runs the FlowBridge orchestrator
-    pipeline, and returns: (final_code, component_name, root_dimensions)
+    Puts the raw inputs into session state and runs a single CodeGeneratorAgent call.
+    Returns: (generated_code, component_name, root_dimensions)
     """
+    # Derive component_name and root_dimensions from JSON (pure Python, no LLM)
+    try:
+        data = json.loads(figma_json_str)
+        root = data.get("ui_root", data)
+        import re as _re2
+        raw_name = root.get("name", "Component")
+        component_name = "".join(w.capitalize() for w in _re2.split(r"[\s_\-]+", raw_name) if w)
+        layout = root.get("layout", {})
+        root_dimensions = {"width": layout.get("width", 400), "height": layout.get("height", 600)}
+    except Exception:
+        component_name = "GeneratedComponent"
+        root_dimensions = {"width": 400, "height": 600}
+
     session_service = InMemorySessionService()
-
     session = await session_service.create_session(
         app_name=APP_NAME,
         user_id=USER_ID,
         state={
-            "figma_node_json": figma_node_json,
+            "figma_node_json": figma_json_str,
             "framework": framework,
+            "styling": styling,
             "special_notes": special_notes,
+            "component_name": component_name,
         },
     )
 
-    runner = Runner(
-        agent=orchestrator,
-        app_name=APP_NAME,
-        session_service=session_service,
-    )
+    runner = Runner(agent=orchestrator, app_name=APP_NAME, session_service=session_service)
 
-    # Trigger message — the pipeline reads everything from state,
-    # so the content of this message is just a start signal.
     trigger = genai_types.Content(
         role="user",
-        parts=[
-            genai_types.Part(
-                text=(
-                    f"Generate a production-ready {framework.capitalize()} "
-                    f"component from the Figma design in session state."
-                )
-            )
-        ],
+        parts=[genai_types.Part(text=(
+            f"Generate a production-ready {framework.capitalize()} "
+            f"component from the Figma design in session state."
+        ))],
     )
 
     print(f"\n{'='*60}")
     print(f"FlowBridge.ai — Generating {framework.capitalize()} component")
     print(f"{'='*60}\n")
 
-    async for event in runner.run_async(
-        user_id=USER_ID,
-        session_id=session.id,
-        new_message=trigger,
-    ):
-        # Print agent activity to console for visibility
+    async for event in runner.run_async(user_id=USER_ID, session_id=session.id, new_message=trigger):
         if hasattr(event, "author") and event.author:
-            agent_name = event.author
             if event.content and event.content.parts:
                 for part in event.content.parts:
                     if hasattr(part, "text") and part.text:
-                        preview = part.text[:120].replace("\n", " ")
-                        print(f"[{agent_name}] {preview}...")
+                        print(f"[{event.author}] {part.text[:120].replace(chr(10), ' ')}...")
 
-    # Read state after pipeline completes
     updated_session = await session_service.get_session(
-        app_name=APP_NAME,
-        user_id=USER_ID,
-        session_id=session.id,
+        app_name=APP_NAME, user_id=USER_ID, session_id=session.id
     )
     state = updated_session.state
 
-    final_code = state.get("final_code", "")
+    final_code = state.get("generated_code", "") or "ERROR: Pipeline did not produce any code."
 
-    if not final_code:
-        # Fallback: try generated_code (in case fidelity gate didn't run)
-        final_code = state.get("generated_code", "")
-
-    if not final_code:
-        final_code = "ERROR: Pipeline did not produce any code. Check agent logs above."
-
-    # Strip markdown fences if the LLM wrapped the code in ```tsx ... ```
-    import re as _re
+    # Strip markdown fences if the LLM wrapped the code
     final_code = _re.sub(r'^```[\w]*\n?', '', final_code.strip(), flags=_re.MULTILINE)
     final_code = _re.sub(r'^```\s*$', '', final_code, flags=_re.MULTILINE)
     final_code = final_code.strip()
 
-    component_name: str = state.get("component_name", "GeneratedComponent")
-    root_dimensions: dict = state.get("root_dimensions", {"width": 400, "height": 600})
-
     return final_code, component_name, root_dimensions
 
+
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     args = parse_args()
 
-    # Resolve JSON input
     json_path = Path(args.json)
     if not json_path.exists():
         print(f"[error] JSON file not found: {json_path}")
@@ -213,8 +175,8 @@ def main() -> None:
     figma_node_json = json_path.read_text(encoding="utf-8")
 
     framework = args.framework
+    styling = args.styling
 
-    # Resolve special notes (CLI string > notes file > default)
     if args.notes:
         special_notes = args.notes
     elif args.notes_file:
@@ -226,12 +188,12 @@ def main() -> None:
     else:
         special_notes = DEFAULT_SPECIAL_NOTES
 
-    print(f"[config] JSON   : {json_path}")
+    print(f"[config] JSON     : {json_path}")
     print(f"[config] Framework: {framework}")
-    print(f"[config] Notes  : {'(from --notes)' if args.notes else '(from --notes-file)' if args.notes_file else '(default)'}")
+    print(f"[config] Styling  : {styling}")
 
     final_code, component_name, root_dims = asyncio.run(
-        run_pipeline(figma_node_json, framework, special_notes)
+        run_pipeline(figma_node_json, framework, special_notes, styling)
     )
 
     print(f"\n{'='*60}")
@@ -239,15 +201,15 @@ def main() -> None:
     print(f"{'='*60}\n")
     print(final_code)
 
-    # Derive file extension from framework
-    ext = "tsx" if framework == "react" else framework
-    output_path = Path(f"output/{component_name}.{ext}")
+    ext_map = {"react": "tsx", "vue": "vue", "angular": "ts", "svelte": "svelte", "html": "html"}
+    output_path = Path(f"output/{component_name}.{ext_map.get(framework, framework)}")
     output_path.parent.mkdir(exist_ok=True)
     output_path.write_text(final_code, encoding="utf-8")
 
     print(f"\n{'='*60}")
     print(f"Saved to: {output_path}")
     print(f"{'='*60}\n")
+
 
 if __name__ == "__main__":
     main()

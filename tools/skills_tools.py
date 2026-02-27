@@ -12,7 +12,7 @@ from google.adk.tools import ToolContext
 # Resolve skills/ directory relative to this file's location
 _SKILLS_DIR = Path(__file__).parent.parent / "skills"
 
-SUPPORTED_FRAMEWORKS = {"react", "vue", "angular", "svelte"}
+SUPPORTED_FRAMEWORKS = {"react", "vue", "angular", "svelte", "html"}
 
 # Map framework name → skills file stem (without .skills.md extension)
 # "react" maps to react-standalone.skills.md (pure Tailwind, no shadcn/cn/cva)
@@ -21,6 +21,7 @@ _FRAMEWORK_TO_FILE: dict[str, str] = {
     "vue": "vue",
     "angular": "angular",
     "svelte": "svelte",
+    "html": "html",
 }
 
 
@@ -30,7 +31,7 @@ def read_skills_file(framework: str, tool_context: ToolContext) -> dict:
     to state["framework_skills"].
 
     Args:
-        framework: One of 'react', 'vue', 'angular', 'svelte'.
+        framework: One of 'react', 'vue', 'angular', 'svelte', 'html'.
         tool_context: ADK ToolContext providing state access.
 
     Returns:
